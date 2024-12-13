@@ -1,5 +1,18 @@
 import sys
+import os
+
+# Add the root directory of the project to the module search path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from src.logger import logging
+
+
+
+
+
+
+
+
 # Function to capture the error details
 def error_message_details(error, error_detail: sys):
     _, _, exc_tb = error_detail.exc_info()  # Extract traceback information
