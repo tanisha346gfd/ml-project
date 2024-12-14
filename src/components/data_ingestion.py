@@ -1,7 +1,7 @@
-import os
 import sys
+import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from src.exception import CustomException
 from src.logger import logging
@@ -12,69 +12,54 @@ from dataclasses import dataclass
 
 from src.components.data_transformation import DataTransformation
 from src.components.data_transformation import DataTransformationConfig
+
 from src.components.model_trainer import ModelTrainerConfig
 from src.components.model_trainer import ModelTrainer
-
 @dataclass
 class DataIngestionConfig:
-    train_data_path: str = os.path.join('artifacts', "train.csv")
-    test_data_path: str = os.path.join('artifacts', "test.csv")
-    raw_data_path: str = os.path.join('artifacts', "data.csv")
+    train_data_path: str=os.path.join('artifacts',"train.csv")
+    test_data_path: str=os.path.join('artifacts',"test.csv")
+    raw_data_path: str=os.path.join('artifacts',"data.csv")
 
 class DataIngestion:
     def __init__(self):
-        self.ingestion_config = DataIngestionConfig()
+        self.ingestion_config=DataIngestionConfig()
 
     def initiate_data_ingestion(self):
         logging.info("Entered the data ingestion method or component")
         try:
-            # Ensure correct path formatting, check if the file exists in the specified path
-            dataset_path = r'notebook\data\stud.csv'  # Ensure this path is correct
-            if not os.path.exists(dataset_path):
-                raise FileNotFoundError(f"The dataset file {dataset_path} was not found.")
-            
-            df = pd.read_csv(dataset_path)
+            df=pd.read_csv('notebook\data\stud.csv')
             logging.info('Read the dataset as dataframe')
 
-            # Create directories if not exists
-            os.makedirs(os.path.dirname(self.ingestion_config.train_data_path), exist_ok=True)
+            os.makedirs(os.path.dirname(self.ingestion_config.train_data_path),exist_ok=True)
 
-            # Save the raw dataset
-            df.to_csv(self.ingestion_config.raw_data_path, index=False, header=True)
+            df.to_csv(self.ingestion_config.raw_data_path,index=False,header=True)
 
             logging.info("Train test split initiated")
-            train_set, test_set = train_test_split(df, test_size=0.2, random_state=42)
+            train_set,test_set=train_test_split(df,test_size=0.2,random_state=42)
 
-            # Save train and test datasets
-            train_set.to_csv(self.ingestion_config.train_data_path, index=False, header=True)
-            test_set.to_csv(self.ingestion_config.test_data_path, index=False, header=True)
+            train_set.to_csv(self.ingestion_config.train_data_path,index=False,header=True)
 
-            logging.info("Ingestion of the data is completed")
+            test_set.to_csv(self.ingestion_config.test_data_path,index=False,header=True)
 
-            return (
+            logging.info("Inmgestion of the data iss completed")
+
+            return(
                 self.ingestion_config.train_data_path,
                 self.ingestion_config.test_data_path
+
             )
         except Exception as e:
-            raise CustomException(e, sys)
+            raise CustomException(e,sys)
+        
+if __name__=="__main__":
+    obj=DataIngestion()
+    train_data,test_data=obj.initiate_data_ingestion()
 
-# Main script
-if __name__ == "__main__":
-    # Data ingestion step
-    obj = DataIngestion()
-    train_data, test_data = obj.initiate_data_ingestion()
+    data_transformation=DataTransformation()
+    train_arr,test_arr,_=data_transformation.initiate_data_transformation(train_data,test_data)
 
-    # Data transformation step
-    data_transformation = DataTransformation()
-    
-    # Make sure initiate_data_transformation method exists and handles the paths correctly
-    train_arr, test_arr, _ = data_transformation.initiate_data_transformation(train_data, test_data)
-    print(f"Transformed training data shape: {train_arr.shape}")
-    print(f"Transformed testing data shape: {test_arr.shape}")
+    modeltrainer=ModelTrainer()
+    print(modeltrainer.initiate_model_trainer(train_arr,test_arr))
 
-    # Model training step
-    model_trainer = ModelTrainer()
 
-    # Make sure initiate_model_trainer method exists and works with transformed arrays
-    model_result = model_trainer.initiate_model_trainer(train_arr, test_arr)
-    print(f"Model training result: {model_result}")
