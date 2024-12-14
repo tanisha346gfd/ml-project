@@ -1,5 +1,8 @@
 import os
 import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from src.exception import CustomException
 from src.logger import logging
 import pandas as pd
@@ -9,7 +12,8 @@ from dataclasses import dataclass
 
 from src.components.data_transformation import DataTransformation
 from src.components.data_transformation import DataTransformationConfig
-
+from src.components.model_trainer import ModelTrainerConfig
+from src.components.model_trainer import ModelTrainer
 
 @dataclass
 class DataIngestionConfig:
@@ -24,17 +28,24 @@ class DataIngestion:
     def initiate_data_ingestion(self):
         logging.info("Entered the data ingestion method or component")
         try:
-            # Ensure correct path formatting
-            df = pd.read_csv(r'notebook\data\stud.csv')
+            # Ensure correct path formatting, check if the file exists in the specified path
+            dataset_path = r'notebook\data\stud.csv'  # Ensure this path is correct
+            if not os.path.exists(dataset_path):
+                raise FileNotFoundError(f"The dataset file {dataset_path} was not found.")
+            
+            df = pd.read_csv(dataset_path)
             logging.info('Read the dataset as dataframe')
 
+            # Create directories if not exists
             os.makedirs(os.path.dirname(self.ingestion_config.train_data_path), exist_ok=True)
 
+            # Save the raw dataset
             df.to_csv(self.ingestion_config.raw_data_path, index=False, header=True)
 
             logging.info("Train test split initiated")
             train_set, test_set = train_test_split(df, test_size=0.2, random_state=42)
 
+            # Save train and test datasets
             train_set.to_csv(self.ingestion_config.train_data_path, index=False, header=True)
             test_set.to_csv(self.ingestion_config.test_data_path, index=False, header=True)
 
@@ -47,12 +58,23 @@ class DataIngestion:
         except Exception as e:
             raise CustomException(e, sys)
 
+# Main script
 if __name__ == "__main__":
+    # Data ingestion step
     obj = DataIngestion()
     train_data, test_data = obj.initiate_data_ingestion()
 
-    # Ensure DataTransformation is implemented
+    # Data transformation step
     data_transformation = DataTransformation()
-data_transformation.initiate_data_transformation(train_data,test_data)
-    # Ensure ModelTrainer is implemented
     
+    # Make sure initiate_data_transformation method exists and handles the paths correctly
+    train_arr, test_arr, _ = data_transformation.initiate_data_transformation(train_data, test_data)
+    print(f"Transformed training data shape: {train_arr.shape}")
+    print(f"Transformed testing data shape: {test_arr.shape}")
+
+    # Model training step
+    model_trainer = ModelTrainer()
+
+    # Make sure initiate_model_trainer method exists and works with transformed arrays
+    model_result = model_trainer.initiate_model_trainer(train_arr, test_arr)
+    print(f"Model training result: {model_result}")
